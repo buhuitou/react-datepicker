@@ -1,75 +1,114 @@
-import React from 'react'
-import PropTypes from 'prop-types'
-import Day from './day'
-import WeekNumber from './week_number'
+import React from "react";
+import PropTypes from "prop-types";
+import Day from "./day";
+import WeekNumber from "./week_number";
+import * as utils from "./date_utils";
 
 export default class Week extends React.Component {
+  static get defaultProps() {
+    return {
+      shouldCloseOnSelect: true
+    };
+  }
   static propTypes = {
-    day: PropTypes.object.isRequired,
+    ariaLabelPrefix: PropTypes.string,
+    disabledKeyboardNavigation: PropTypes.bool,
+    day: PropTypes.instanceOf(Date).isRequired,
     dayClassName: PropTypes.func,
-    endDate: PropTypes.object,
+    disabledDayAriaLabelPrefix: PropTypes.string,
+    chooseDayAriaLabelPrefix: PropTypes.string,
+    endDate: PropTypes.instanceOf(Date),
     excludeDates: PropTypes.array,
     filterDate: PropTypes.func,
     formatWeekNumber: PropTypes.func,
-    highlightDates: PropTypes.array,
+    highlightDates: PropTypes.instanceOf(Map),
     includeDates: PropTypes.array,
     inline: PropTypes.bool,
-    maxDate: PropTypes.object,
-    minDate: PropTypes.object,
+    shouldFocusDayInline: PropTypes.bool,
+    locale: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({ locale: PropTypes.object })
+    ]),
+    maxDate: PropTypes.instanceOf(Date),
+    minDate: PropTypes.instanceOf(Date),
     month: PropTypes.number,
     onDayClick: PropTypes.func,
     onDayMouseEnter: PropTypes.func,
     onWeekSelect: PropTypes.func,
-    preSelection: PropTypes.object,
-    selected: PropTypes.object,
-    selectingDate: PropTypes.object,
+    preSelection: PropTypes.instanceOf(Date),
+    selected: PropTypes.instanceOf(Date),
+    selectingDate: PropTypes.instanceOf(Date),
     selectsEnd: PropTypes.bool,
     selectsStart: PropTypes.bool,
+    selectsRange: PropTypes.bool,
     showWeekNumber: PropTypes.bool,
-    startDate: PropTypes.object,
-    utcOffset: PropTypes.number
-  }
+    startDate: PropTypes.instanceOf(Date),
+    setOpen: PropTypes.func,
+    shouldCloseOnSelect: PropTypes.bool,
+    renderDayContents: PropTypes.func,
+    handleOnKeyDown: PropTypes.func,
+    isInputFocused: PropTypes.bool,
+    containerRef: PropTypes.oneOfType([
+      PropTypes.func,
+      PropTypes.shape({ current: PropTypes.instanceOf(Element) })
+    ]),
+    monthShowsDuplicateDaysEnd: PropTypes.bool,
+    monthShowsDuplicateDaysStart: PropTypes.bool
+  };
 
   handleDayClick = (day, event) => {
     if (this.props.onDayClick) {
-      this.props.onDayClick(day, event)
+      this.props.onDayClick(day, event);
     }
-  }
+  };
 
-  handleDayMouseEnter = (day) => {
+  handleDayMouseEnter = day => {
     if (this.props.onDayMouseEnter) {
-      this.props.onDayMouseEnter(day)
+      this.props.onDayMouseEnter(day);
     }
-  }
+  };
 
   handleWeekClick = (day, weekNumber, event) => {
-    if (typeof this.props.onWeekSelect === 'function') {
-      this.props.onWeekSelect(day, weekNumber, event)
+    if (typeof this.props.onWeekSelect === "function") {
+      this.props.onWeekSelect(day, weekNumber, event);
     }
-  }
+    if (this.props.shouldCloseOnSelect) {
+      this.props.setOpen(false);
+    }
+  };
 
-  formatWeekNumber = (startOfWeek) => {
+  formatWeekNumber = date => {
     if (this.props.formatWeekNumber) {
-      return this.props.formatWeekNumber(startOfWeek)
+      return this.props.formatWeekNumber(date);
     }
-    return parseInt(startOfWeek.format('w'), 10)
-  }
+    return utils.getWeek(date, this.props.locale);
+  };
 
   renderDays = () => {
-    const startOfWeek = this.props.day.clone().startOf('week')
-    const days = []
-    const weekNumber = this.formatWeekNumber(startOfWeek)
+    const startOfWeek = utils.getStartOfWeek(this.props.day, this.props.locale);
+    const days = [];
+    const weekNumber = this.formatWeekNumber(startOfWeek);
     if (this.props.showWeekNumber) {
       const onClickAction = this.props.onWeekSelect
-          ? this.handleWeekClick.bind(this, startOfWeek, weekNumber)
-          : undefined
-      days.push(<WeekNumber key="W" weekNumber={weekNumber} onClick={onClickAction} />)
+        ? this.handleWeekClick.bind(this, startOfWeek, weekNumber)
+        : undefined;
+      days.push(
+        <WeekNumber
+          key="W"
+          weekNumber={weekNumber}
+          onClick={onClickAction}
+          ariaLabelPrefix={this.props.ariaLabelPrefix}
+        />
+      );
     }
-    return days.concat([0, 1, 2, 3, 4, 5, 6].map(offset => {
-      const day = startOfWeek.clone().add(offset, 'days')
-      return (
-        <Day
-            key={offset}
+    return days.concat(
+      [0, 1, 2, 3, 4, 5, 6].map(offset => {
+        const day = utils.addDays(startOfWeek, offset);
+        return (
+          <Day
+            ariaLabelPrefixWhenEnabled={this.props.chooseDayAriaLabelPrefix}
+            ariaLabelPrefixWhenDisabled={this.props.disabledDayAriaLabelPrefix}
+            key={day.valueOf()}
             day={day}
             month={this.props.month}
             onClick={this.handleDayClick.bind(this, day)}
@@ -78,7 +117,6 @@ export default class Week extends React.Component {
             maxDate={this.props.maxDate}
             excludeDates={this.props.excludeDates}
             includeDates={this.props.includeDates}
-            inline={this.props.inline}
             highlightDates={this.props.highlightDates}
             selectingDate={this.props.selectingDate}
             filterDate={this.props.filterDate}
@@ -86,19 +124,26 @@ export default class Week extends React.Component {
             selected={this.props.selected}
             selectsStart={this.props.selectsStart}
             selectsEnd={this.props.selectsEnd}
+            selectsRange={this.props.selectsRange}
             startDate={this.props.startDate}
             endDate={this.props.endDate}
             dayClassName={this.props.dayClassName}
-            utcOffset={this.props.utcOffset}/>
-      )
-    }))
-  }
+            renderDayContents={this.props.renderDayContents}
+            disabledKeyboardNavigation={this.props.disabledKeyboardNavigation}
+            handleOnKeyDown={this.props.handleOnKeyDown}
+            isInputFocused={this.props.isInputFocused}
+            containerRef={this.props.containerRef}
+            inline={this.props.inline}
+            shouldFocusDayInline={this.props.shouldFocusDayInline}
+            monthShowsDuplicateDaysEnd={this.props.monthShowsDuplicateDaysEnd}
+            monthShowsDuplicateDaysStart={this.props.monthShowsDuplicateDaysStart}
+          />
+        );
+      })
+    );
+  };
 
-  render () {
-    return (
-      <div className="react-datepicker__week">
-        {this.renderDays()}
-      </div>
-    )
+  render() {
+    return <div className="react-datepicker__week">{this.renderDays()}</div>;
   }
 }

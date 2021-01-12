@@ -4,14 +4,29 @@
 
 | name  | type  | default value  | description  |
 |---|---|---|---|
+|`className`|`string`|||
+|`enableTabLoop`|`bool`|||
 |`hidePopper`|`bool`|`true`||
 |`popperComponent`|`element`|||
-|`popperModifiers`|`object`|`{
-  preventOverflow: {
-    enabled: true,
-    escapeWithReference: true,
-    boundariesElement: 'viewport'
-  }
-}`||
-|`popperPlacement`|`enum('auto'\|'auto-left'\|'auto-right'\|'bottom'\|'bottom-end'\|'bottom-start'\|'left'\|'left-end'\|'left-start'\|'right'\|'right-end'\|'right-start'\|'top'\|'top-end'\|'top-start')`|`'bottom-start'`||
+|`popperContainer`|`func`|||
+|`popperModifiers`|`arrayOf[object Object]`|`[
+  {
+    name: "flip",
+    options: {
+      allowedAutoPlacements: ["top", "bottom"],
+      rootBoundary: "viewport",
+    },
+  },
+  {
+    name: "preventOverflow",
+    options: {
+      rootBoundary: "viewport",
+    },
+  },
+]`||
+|`popperOnKeyDown`|`func`|||
+|`popperPlacement`|`enumpopperPlacementPositions`|`"bottom-start"`||
+|`popperProps`|`object`|||
+|`portalId`|`string`|||
 |`targetComponent`|`element`|||
+|`wrapperClassName`|`string`|||
